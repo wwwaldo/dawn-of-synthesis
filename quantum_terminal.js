@@ -22,7 +22,10 @@ class QuantumTerminal {
         this.term.writeln('Loading Python runtime...');
         this.pyodide = await loadPyodide();
         
-        // Set up stdout only
+        // Create a clean namespace for our Python code
+        const namespace = this.pyodide.globals.get("dict")();
+        
+        // Set up stdout and stdin
         const terminalIO = {
             stdout: {
                 write: (text) => {
@@ -33,9 +36,15 @@ class QuantumTerminal {
                     return text.length;
                 },
                 flush: () => {}
+            },
+            stdin: {
+                read: () => {
+                    return prompt("Input required:") + "\n";
+                }
             }
         };
 
+        this.pyodide.setStdin(terminalIO.stdin);
         this.pyodide.setStdout(terminalIO.stdout);
         this.pyodide.setStderr(terminalIO.stdout);
         
@@ -43,8 +52,10 @@ class QuantumTerminal {
         try {
             const response = await fetch('dawn_of_synthesis.py');
             const content = await response.text();
-            await this.pyodide.runPython(content);
-            await this.pyodide.runPython('main()');
+            
+            // Run in our clean namespace
+            await this.pyodide.runPython(content, {globals: namespace});
+            await this.pyodide.runPython('main()', {globals: namespace});
         } catch (err) {
             console.error(err);
             this.term.writeln('Warning: Could not load synthesis protocols');
