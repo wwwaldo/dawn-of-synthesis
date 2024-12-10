@@ -29,17 +29,40 @@ class QuantumTerminal {
         const terminalIO = {
             stdout: {
                 write: (text) => {
+                    console.log("stdout.write called with:", text);
                     if (text instanceof Uint8Array) {
                         text = new TextDecoder().decode(text);
                     }
+                    console.log("writing to terminal:", text);
                     this.term.write(text);
                     return text.length;
                 },
-                flush: () => {}
+                flush: () => {
+                    console.log("stdout.flush called");
+                    this.term.write('\n');
+                }
             },
             stdin: {
-                read: () => {
-                    return prompt("Input required:") + "\n";
+                buffer: "",
+                pendingResolve: null,
+                read: function() {
+                    console.log('stdin.read() called, buffer:', this.buffer);
+                    return new Promise((resolve) => {
+                        if (this.buffer.length > 0) {
+                            const char = this.buffer[0];
+                            this.buffer = this.buffer.slice(1);
+                            console.log('resolving immediately with:', char);
+                            resolve(char);
+                        } else {
+                            console.log('no data, storing resolve for later');
+                            this.pendingResolve = resolve;
+                            console.log('pendingResolve stored as:', this.pendingResolve);
+                        }
+                    });
+                },
+                isEOF: function() {
+                    console.log('isEOF check called');
+                    return false;  // Let's never EOF for now
                 }
             }
         };
@@ -47,10 +70,24 @@ class QuantumTerminal {
         this.pyodide.setStdin(terminalIO.stdin);
         this.pyodide.setStdout(terminalIO.stdout);
         this.pyodide.setStderr(terminalIO.stdout);
-        
+
+        // Set up input handling
+        this.term.onData(data => {
+            console.log('onData fired with:', data, 'current buffer:', terminalIO.stdin.buffer);
+            terminalIO.stdin.buffer += data;
+            console.log('buffer after append:', terminalIO.stdin.buffer);
+            if (terminalIO.stdin.pendingResolve) {
+                const char = terminalIO.stdin.buffer[0];
+                terminalIO.stdin.buffer = terminalIO.stdin.buffer.slice(1);
+                console.log('resolving pending promise with:', char);
+                terminalIO.stdin.pendingResolve(char);
+                terminalIO.stdin.pendingResolve = null;
+            }
+        });
+
         // Load dawn_of_synthesis.py
         try {
-            const response = await fetch('dawn_of_synthesis.py');
+            const response = await fetch('test_io.py');
             const content = await response.text();
             
             // Run in our clean namespace
