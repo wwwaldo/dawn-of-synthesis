@@ -44,26 +44,10 @@ class QuantumTerminal {
             },
             stdin: {
                 buffer: "",
-                pendingResolve: null,
                 read: function() {
-                    console.log('stdin.read() called, buffer:', this.buffer);
-                    return new Promise((resolve) => {
-                        if (this.buffer.length > 0) {
-                            const char = this.buffer[0];
-                            this.buffer = this.buffer.slice(1);
-                            console.log('resolving immediately with:', char);
-                            resolve(char);
-                        } else {
-                            console.log('no data, storing resolve for later');
-                            this.pendingResolve = resolve;
-                            console.log('pendingResolve stored as:', this.pendingResolve);
-                        }
-                    });
+                    console.log('stdin.read() called - returning CATS');
+                    return "CATS\n"; // Promise.resolve('CATS\n');
                 },
-                isEOF: function() {
-                    console.log('isEOF check called');
-                    return false;  // Let's never EOF for now
-                }
             }
         };
 

@@ -8,6 +8,7 @@ async def ainput(prompt: str = '') -> str:
 async def main():
     print("Hello! What's your name?", flush=True)
     name = await ainput()
+    print(name, flush=True)
     print(f"Nice to meet you, {name}!")
 
 if __name__ == "__main__":
