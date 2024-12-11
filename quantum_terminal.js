@@ -3,11 +3,10 @@ import { DawnOfSynthesis } from './dawn_of_synthesis.js';
 class QuantumTerminal {
     constructor() {
         this.calculateDimensions();
-        const fontSize = this.calculateFontSize();
         this.term = new Terminal({
             cursorBlink: true,
             convertEol: true,
-            fontSize: fontSize,
+            fontSize: 16,
             fontFamily: "'Courier New', 'Consolas', monospace",
             cols: this.cols,
             rows: this.rows,
@@ -23,16 +22,6 @@ class QuantumTerminal {
         this.resolveInput = null;
     }
 
-    calculateFontSize() {
-        if (window.innerWidth <= 480) {  // Mobile
-            return 20;
-        } else if (window.innerWidth <= 768) {  // Tablet
-            return 18;
-        } else {  // Desktop
-            return 16;
-        }
-    }
-
     calculateDimensions() {
         // Get container size (accounting for padding)
         const terminalContainer = document.getElementById('terminal');
@@ -43,19 +32,15 @@ class QuantumTerminal {
         const availableWidth = terminalContainer.clientWidth - paddingH;
         const availableHeight = terminalContainer.clientHeight - paddingV;
 
-        const fontSize = this.calculateFontSize();
+        const fontSize = 16;
         const charWidth = fontSize * 0.6;
         const charHeight = fontSize * 1.2;
 
         this.cols = Math.floor(availableWidth / charWidth);
         this.rows = Math.floor(availableHeight / charHeight);
 
-        // Adjust column bounds based on screen size
-        const minCols = window.innerWidth <= 480 ? 30 : 40;
-        const maxCols = window.innerWidth <= 480 ? 40 : 100;
-
         // Ensure minimum reasonable size
-        this.cols = Math.max(minCols, Math.min(this.cols, maxCols));
+        this.cols = Math.max(40, Math.min(this.cols, 100));
         this.rows = Math.max(10, Math.min(this.rows, 30));
     }
 
@@ -64,8 +49,6 @@ class QuantumTerminal {
         
         // Handle window resize
         window.addEventListener('resize', () => {
-            const fontSize = this.calculateFontSize();
-            this.term.options.fontSize = fontSize;
             this.calculateDimensions();
             this.term.resize(this.cols, this.rows);
         });
