@@ -73,7 +73,19 @@ async function consciousnessDialogue(terminal) {
         terminal.print(`${i + 1}. ${response}`);
     });
     
-    const choice = await terminal.input("\nWhat's your perspective? (1-4): ");
+    let validChoice = false;
+    let choiceNum;
+    while (!validChoice) {
+        const input = await terminal.input("\nWhat's your perspective? (1-4): ");
+        choiceNum = parseInt(input);
+        if (!isNaN(choiceNum) && choiceNum >= 1 && choiceNum <= 4) {
+            validChoice = true;
+        } else {
+            terminal.print("Please enter a number between 1 and 4.");
+        }
+    }
+
+    terminal.print(`\nYou chose: ${responses[question][choiceNum - 1]}`);
     terminal.print("\nInteresting choice! Consider this: Perhaps consciousness isn't");
     terminal.print("about having a single trait, but about how different capabilities");
     terminal.print("emerge and interact with each other...");
@@ -114,25 +126,18 @@ async function synthesisExperiment(terminal) {
         terminal.print("\nCurrent story: " + story.join(' '));
         
         for (let i = 0; i < 5; i++) {
-            const word = await terminal.input("Add the next word: ");
-            story.push(word);
-            
-            // AI's turn - simple but contextual additions
-            let aiWord;
-            if (story.length < 3) {
-                aiWord = "upon";
-            } else if (story.includes("time")) {
-                aiWord = "there";
-            } else {
-                aiWord = ["the", "a", "was", "and"][Math.floor(Math.random() * 4)];
+            await new Promise(resolve => setTimeout(resolve, 500));
+            const newCells = [];
+            for (let j = 0; j < cells.length; j++) {
+                const left = j > 0 ? cells[j-1] : cells[cells.length-1];
+                const right = j < cells.length-1 ? cells[j+1] : cells[0];
+                newCells[j] = (left === right) ? '■' : '□';
             }
-            
-            story.push(aiWord);
-            terminal.print("Current story: " + story.join(' '));
+            cells.splice(0, cells.length, ...newCells);
+            terminal.print(cells.join(''));
         }
         
-        terminal.print("\nOur collaborative story: " + story.join(' '));
-        
+        await terminal.input("\nPress Enter to continue...");
     } catch (e) {
         terminal.print("\nERROR: Consciousness synchronization failed");
         terminal.print(`Cause: ${e.message}`);
@@ -198,29 +203,37 @@ class DawnOfSynthesis {
                     await chapter.interactiveElement(this.terminal);
                     this.terminal.print(`\nReflection: ${chapter.reflectionPrompt}`);
                     await this.terminal.input("Take a moment to reflect, then press Enter to continue...");
-                    return;
+                } else {
+                    this.terminal.print("Invalid chapter number. Starting from the beginning...");
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             }
-            
-            // Sequential playthrough
-            for (let i = 0; i < this.chapters.length; i++) {
-                const chapter = this.chapters[i];
-                await this.terminal.input(`Press Enter to begin Chapter ${i + 1}: ${chapter.title}...`);
-                this.terminal.print(`\n--- Chapter ${i + 1}: ${chapter.title} ---`);
-                await this.terminal.typewriterPrint(chapter.description, 20);
-                await chapter.interactiveElement(this.terminal);
-                this.terminal.print(`\nReflection: ${chapter.reflectionPrompt}`);
-                await this.terminal.input("Take a moment to reflect, then press Enter to continue...");
-                this.terminal.print("\n" + "=".repeat(50) + "\n");
+
+            if (!choice || isNaN(choice) || parseInt(choice) < 1 || parseInt(choice) > this.chapters.length) {
+                // Run all chapters in sequence
+                for (let i = 0; i < this.chapters.length; i++) {
+                    const chapter = this.chapters[i];
+                    await this.terminal.input(`Press Enter to begin Chapter ${i + 1}: ${chapter.title}...`);
+                    this.terminal.print(`\n--- Chapter ${i + 1}: ${chapter.title} ---`);
+                    await this.terminal.typewriterPrint(chapter.description, 20);
+                    await chapter.interactiveElement(this.terminal);
+                    this.terminal.print(`\nReflection: ${chapter.reflectionPrompt}`);
+                    await this.terminal.input("Take a moment to reflect, then press Enter to continue...");
+                    this.terminal.print("\n" + "=".repeat(50) + "\n");
+                }
             }
-            
+
+            // Always show ending messages
+            this.terminal.print("\n" + "=".repeat(50) + "\n");
             await this.terminal.typewriterPrint("Thank you for experiencing this journey into synthesis.", 20);
             await this.terminal.typewriterPrint("Remember: The future is not something that happens to us.", 20);
             await this.terminal.typewriterPrint("It's something we create together.", 20);
             
         } catch (error) {
             this.terminal.print("\nA quantum disturbance has occurred. Please recalibrate and try again.");
-            console.error(error);
+            if (error.message !== "Reality harmonization protocol activated") {
+                console.error(error);
+            }
         }
     }
 }
